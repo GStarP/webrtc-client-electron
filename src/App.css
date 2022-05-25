@@ -1,0 +1,13 @@
+.app {
+  padding: 16px;
+}
+.app video {
+  width: 800px;
+  height: 400px;
+  border: 1px solid #000;
+  display: block;
+}
+.app button {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}

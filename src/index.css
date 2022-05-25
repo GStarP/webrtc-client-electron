@@ -1,0 +1,7 @@
+body {
+  margin: 0;
+  /* strange blank */
+  margin-top: -20px;
+  box-sizing: border-box;
+  height: 100vh;
+}
