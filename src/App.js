@@ -147,6 +147,35 @@ function App() {
     localStream = null;
   }
 
+  /**
+   * capture screen
+   */
+  // ask main process to capture screen
+  window.T.ipcRenderer.send('CAPTURE_SCREEN');
+  const captureScreen = () => {
+    // get screen source info
+    const screenSourceInfo = window.T.getScreenSource();
+    if (!screenSourceInfo) {
+      console.error('no screen source info');
+      return;
+    }
+    // get video stream, then attach
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: false,
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: screenSourceInfo.id
+          }
+        }
+      })
+      .then((stream) => {
+        localVideo.current.srcObject = stream;
+      })
+      .catch((e) => console.error(e));
+  };
+
   return (
     <div className="app">
       <h1>WebRTC Client</h1>
@@ -156,6 +185,7 @@ function App() {
         <button onClick={connectSignalingServer}>Online</button>
         <button onClick={start}>Start</button>
         <button onClick={cancel}>Cancel</button>
+        <button onClick={captureScreen}>Capture Screen</button>
       </div>
       <video ref={remoteVideo} autoPlay playsInline />
     </div>
