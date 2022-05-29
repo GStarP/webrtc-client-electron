@@ -11,3 +11,13 @@
   margin-right: 8px;
   margin-bottom: 8px;
 }
+
+#controlView {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}

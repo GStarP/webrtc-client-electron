@@ -1,5 +1,6 @@
 const { app, BrowserWindow, desktopCapturer, ipcMain } = require('electron');
 const path = require('path');
+const robot = require('robotjs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -15,7 +16,9 @@ const createWindow = () => {
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
-    }
+    },
+    // no alt, no menu bar
+    autoHideMenuBar: true
   });
 
   /**
@@ -35,6 +38,32 @@ const createWindow = () => {
         }
       })
       .catch((e) => mainWindow.webContents.send('SCREEN_SOURCE_ERR', e));
+  });
+
+  /**
+   * full screen
+   */
+  ipcMain.on('FULL_SCREEN', () => {
+    mainWindow.setFullScreen(true);
+  });
+  ipcMain.on('CANCEL_FULL_SCREEN', () => {
+    mainWindow.setFullScreen(false);
+  });
+
+  /**
+   * resize window
+   */
+  ipcMain.on('RESIZE', (_, size) => {
+    mainWindow.setSize(size.width, size.height);
+    mainWindow.center();
+  });
+
+  /**
+   * move mouse
+   * @param pos [x, y]
+   */
+  ipcMain.on('MOVE_MOUSE', (_, pos) => {
+    robot.moveMouse(pos[0], pos[1]);
   });
 
   // and load the index.html of the app.
@@ -67,3 +96,6 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+// node version: 16.14.2
+// console.log(process.versions)

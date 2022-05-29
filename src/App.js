@@ -1,4 +1,4 @@
-import React, { createRef, useEffect } from 'react';
+import React, { createRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
 import './App.css';
@@ -23,16 +23,12 @@ function App() {
 
   // capture local video
   let localStream;
+  let remoteStream;
   const localVideo = createRef();
   const remoteVideo = createRef();
 
   let pc;
   const onMsg = (data) => {
-    // client1 ready, client2 receive but not ready
-    if (!localStream) {
-      console.log('not ready yet');
-      return;
-    }
     switch (data.type) {
       case 'offer':
         handleOffer(data);
@@ -44,6 +40,11 @@ function App() {
         handleCandidate(data);
         break;
       case 'ready':
+        // client1 ready, client2 receive but not ready
+        if (!localStream) {
+          console.log('not ready yet');
+          return;
+        }
         // client2 ready, client1 receive and call
         if (pc) {
           console.log('already in call, ignoring');
@@ -56,10 +57,23 @@ function App() {
           hangup();
         }
         break;
+      case 'control':
+        recvControl();
+        break;
+      case 'control_ready':
+        startControl();
+        break;
+      case 'move_mouse':
+        moveMouse(data.pos);
+        break;
       default:
         console.log('unhandled', data);
         break;
     }
+  };
+
+  const ready = () => {
+    socket.emit('msg', { type: 'ready' });
   };
 
   const start = async () => {
@@ -68,8 +82,6 @@ function App() {
       video: true
     });
     localVideo.current.srcObject = localStream;
-
-    socket.emit('msg', { type: 'ready' });
   };
 
   function createPeerConnection() {
@@ -87,9 +99,15 @@ function App() {
       socket.emit('msg', message);
     };
     // attach remote stream
-    pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+    pc.ontrack = (e) => {
+      remoteStream = e.streams[0];
+      remoteVideo.current.srcObject = remoteStream;
+    };
     // attach local stream
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+    if (localStream)
+      localStream
+        .getTracks()
+        .forEach((track) => pc.addTrack(track, localStream));
   }
 
   async function makeCall() {
@@ -143,16 +161,20 @@ function App() {
       pc.close();
       pc = null;
     }
-    localStream.getTracks().forEach((track) => track.stop());
-    localStream = null;
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+      localStream = null;
+    }
   }
 
   /**
    * capture screen
    */
   // ask main process to capture screen
-  window.T.ipcRenderer.send('CAPTURE_SCREEN');
-  const captureScreen = () => {
+  // many window share one main process
+  if (window.T.getScreenSource() === null)
+    window.T.ipcRenderer.send('CAPTURE_SCREEN');
+  const captureScreen = async () => {
     // get screen source info
     const screenSourceInfo = window.T.getScreenSource();
     if (!screenSourceInfo) {
@@ -160,20 +182,82 @@ function App() {
       return;
     }
     // get video stream, then attach
-    navigator.mediaDevices
-      .getUserMedia({
-        audio: false,
-        video: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: screenSourceInfo.id
-          }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: screenSourceInfo.id
         }
-      })
-      .then((stream) => {
-        localVideo.current.srcObject = stream;
-      })
-      .catch((e) => console.error(e));
+      }
+    });
+    localStream = stream;
+    localVideo.current.srcObject = stream;
+  };
+
+  /**
+   * control screen
+   */
+  const controlScreen = () => {
+    socket.emit('msg', { type: 'control' });
+  };
+
+  const recvControl = () => {
+    if (localStream) {
+      socket.emit('msg', {
+        type: 'control_ready'
+      });
+    }
+  };
+
+  const startControl = () => {
+    showControlView(remoteStream);
+  };
+
+  // control mouse move
+  const throttle = (func, interval) => {
+    let pre = 0;
+    return function () {
+      const cur = performance.now();
+      const context = this;
+      if (cur - pre >= interval) {
+        func.apply(context, arguments);
+        pre = cur;
+      }
+    };
+  };
+  // 30 fps move mouse
+  const onMouseMove = throttle((e) => {
+    console.log(e);
+    socket.emit('msg', { type: 'move_mouse', pos: [e.clientX, e.clientY] });
+  }, 30);
+  // show/quit fullscreen control view
+  let controlView = createRef();
+  let [controlViewShow, setControlViewShow] = useState(false);
+  // when show, add event listeners
+  const showControlView = (stream) => {
+    const config = stream.getVideoTracks()[0].getSettings();
+    window.T.ipcRenderer.send('RESIZE', {
+      width: config.width,
+      height: config.height
+    });
+    setControlViewShow(true);
+    controlView.current.srcObject = stream;
+    document.addEventListener('keyup', quitControlView);
+    document.addEventListener('mousemove', onMouseMove);
+  };
+  // when quit, remove event listeners
+  const quitControlView = (e) => {
+    // esc
+    if (e.keyCode === 27) {
+      setControlViewShow(false);
+      document.removeEventListener('keyup', quitControlView);
+      document.removeEventListener('mousemove', onMouseMove);
+    }
+  };
+
+  const moveMouse = (pos) => {
+    window.T.ipcRenderer.send('MOVE_MOUSE', pos);
   };
 
   return (
@@ -184,10 +268,21 @@ function App() {
       <div>
         <button onClick={connectSignalingServer}>Online</button>
         <button onClick={start}>Start</button>
-        <button onClick={cancel}>Cancel</button>
         <button onClick={captureScreen}>Capture Screen</button>
+        <button onClick={ready}>Ready</button>
+        <button onClick={controlScreen}>Control Screen</button>
+        <button onClick={cancel}>Cancel</button>
       </div>
       <video ref={remoteVideo} autoPlay playsInline />
+      <video
+        id="controlView"
+        ref={controlView}
+        style={{
+          display: controlViewShow ? 'block' : 'none'
+        }}
+        autoPlay
+        playsInline
+      ></video>
     </div>
   );
 }
