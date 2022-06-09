@@ -1,5 +1,34 @@
+@font-face {
+  font-family: 'MiSans-Light';
+  src: url('./assets/MiSans-Light.ttf');
+}
+
+/**
+ * common style
+ */
 body {
   margin: 0;
   box-sizing: border-box;
+}
+#root {
   height: 100vh;
+}
+div {
+  box-sizing: border-box;
+}
+
+/**
+ * common class
+ */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-center {
+  justify-content: center;
+  align-items: center;
 }

@@ -1,16 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { HashRouter } from 'react-router-dom';
 
 import App from './app/App';
 
 import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+// change default font-family
+const theme = createTheme({
+  typography: {
+    fontFamily: 'MiSans-Light'
+  }
+});
+
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </ThemeProvider>
   </React.StrictMode>
 );

@@ -4,25 +4,26 @@ const robot = require('robotjs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
-  // eslint-disable-line global-require
   app.quit();
 }
 
+/* main function */
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1080,
+    // extra space for devtool
+    width: 1380,
     height: 720,
+    // preload script
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    // no alt, no menu bar
+    // hide menu bar
     autoHideMenuBar: true
   });
 
   /**
-   * capture screen and pass source id
+   * capture screen and pass source info
    */
   ipcMain.on('CAPTURE_SCREEN', () => {
     desktopCapturer
@@ -33,7 +34,7 @@ const createWindow = () => {
         } else {
           mainWindow.webContents.send(
             'SCREEN_SOURCE_ERR',
-            'too many screen sources'
+            'no screen source captured'
           );
         }
       })
@@ -41,17 +42,8 @@ const createWindow = () => {
   });
 
   /**
-   * full screen
-   */
-  ipcMain.on('FULL_SCREEN', () => {
-    mainWindow.setFullScreen(true);
-  });
-  ipcMain.on('CANCEL_FULL_SCREEN', () => {
-    mainWindow.setFullScreen(false);
-  });
-
-  /**
    * resize window
+   * @param size { width, height }
    */
   ipcMain.on('RESIZE', (_, size) => {
     mainWindow.setSize(size.width, size.height);
@@ -66,10 +58,7 @@ const createWindow = () => {
     robot.moveMouse(pos[0], pos[1]);
   });
 
-  // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
 
@@ -89,9 +78,9 @@ app.on('window-all-closed', () => {
   }
 });
 
+// On OS X it's common to re-create a window in the app when the
+// dock icon is clicked and there are no other windows open.
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
