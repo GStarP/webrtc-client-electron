@@ -4,9 +4,10 @@ import { Button, Card, Typography } from '@mui/material';
 import ResetTvIcon from '@mui/icons-material/ResetTv';
 import SplitInput from '../../components/SplitInput';
 import { Box } from '@mui/system';
+import Hint from '../../utils/hint';
 
 function Home() {
-  const [inJoin, setInJoin] = useState(true);
+  const [inJoin, setInJoin] = useState(false);
 
   /**
    * Home
@@ -31,8 +32,7 @@ function Home() {
   const ridLen = 4;
   const confirmJoin = () => {
     if (rid.length < ridLen) {
-      // TODO: global alert
-      alert('请输入完整的房间号码');
+      Hint.Alert.error('请输入完整的房间号码');
       return;
     }
     console.log(rid);

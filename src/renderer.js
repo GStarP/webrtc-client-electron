@@ -6,6 +6,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './app/App';
 
 import './index.css';
+import Hint from './app/utils/hint';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -25,3 +26,6 @@ root.render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// init Hint
+Hint.init({ alert: true });

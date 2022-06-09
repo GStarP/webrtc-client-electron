@@ -3,15 +3,17 @@
   src: url('./assets/MiSans-Light.ttf');
 }
 
+#root {
+  height: 100vh;
+}
+
 /**
  * common style
  */
 body {
   margin: 0;
   box-sizing: border-box;
-}
-#root {
-  height: 100vh;
+  position: relative;
 }
 div {
   box-sizing: border-box;
