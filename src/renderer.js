@@ -13,7 +13,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 // change default font-family
 const theme = createTheme({
   typography: {
-    fontFamily: 'MiSans-Light'
+    fontFamily: 'MiSans-Normal'
   }
 });
 
@@ -28,4 +28,7 @@ root.render(
 );
 
 // init Hint
-Hint.init({ alert: true });
+Hint.init({ alert: true, loading: true });
+
+const close = Hint.Loading.show('创建房间中');
+setTimeout(() => close(), 2000);

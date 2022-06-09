@@ -1,6 +1,6 @@
 @font-face {
-  font-family: 'MiSans-Light';
-  src: url('./assets/MiSans-Light.ttf');
+  font-family: 'MiSans-Normal';
+  src: url('./assets/MiSans-Normal.ttf');
 }
 
 #root {

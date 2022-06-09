@@ -1,5 +1,5 @@
-import { Alert } from '@mui/material';
-import React, { Fragment } from 'react';
+import { Alert, Box, CircularProgress, Dialog } from '@mui/material';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 const Hint = {
@@ -15,13 +15,14 @@ const Hint = {
     if (config.alert) {
       this.Alert.init(this.el);
     }
-    if (config.dialog) {
-      this.Dialog.init(this, el);
+    if (config.loading) {
+      this.Loading.init(this.el);
     }
   },
   Alert: {
     el: null,
     root: null,
+    timer: null,
     defaultConfig: {
       type: 'success',
       text: '',
@@ -43,10 +44,15 @@ const Hint = {
         ...this.defaultConfig,
         ...config
       };
-      this.root.render(<Alert severity={config.type}>{config.text}</Alert>);
+      this.root.render(
+        <Alert severity={config.type} sx={{ fontFamily: 'MiSans-Normal' }}>
+          {config.text}
+        </Alert>
+      );
       this.el.style.visibility = 'visible';
       this.el.style.opacity = '1';
-      setTimeout(() => {
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
         this.el.style.opacity = '0';
         // hide after animation
         setTimeout(() => {
@@ -67,9 +73,37 @@ const Hint = {
       });
     }
   },
-  Dialog: {
+  Loading: {
     el: null,
-    init(container) {}
+    root: null,
+    init(container) {
+      this.el = document.createElement('div');
+      this.el.id = 'loading';
+      container.appendChild(this.el);
+      this.root = ReactDOM.createRoot(this.el);
+    },
+    show(text) {
+      this.root.render(
+        <Dialog open={true}>
+          <Box
+            className="flex-col flex-center"
+            sx={{
+              px: 3,
+              pt: 2.5,
+              pb: 4,
+              minWidth: 240,
+              fontFamily: 'MiSans-Normal'
+            }}
+          >
+            <Box sx={{ mb: 2.5 }}>{text}</Box>
+            <CircularProgress />
+          </Box>
+        </Dialog>
+      );
+      return () => {
+        this.root.render(<Dialog open={false}></Dialog>);
+      };
+    }
   }
 };
 
