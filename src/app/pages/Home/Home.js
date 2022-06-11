@@ -14,7 +14,15 @@ function Home() {
    */
   const createRoom = () => {
     // TODO: create room logic
-    to('/room');
+    Hint.Dialog.confirm('是否确定创建房间？')
+      .then(() => {
+        Hint.Loading.show('正在创建房间');
+        setTimeout(() => {
+          Hint.Loading.close();
+          to('/room');
+        }, 1000);
+      })
+      .catch(() => Hint.Alert.success('取消创建'));
   };
 
   const joinRoom = () => {
